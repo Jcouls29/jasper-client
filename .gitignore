@@ -65,3 +65,8 @@ target/
 
 # SublimeLinter config file
 .sublimelinterrc
+.idea/jasper-client.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
