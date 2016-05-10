@@ -12,6 +12,13 @@ import jasperpath
 
 
 class Mic:
+    THRESHOLD_MULTIPLIER = 1.8
+    RATE = 44100
+    CHUNK = 2800
+    # number of seconds to allow to establish threshold
+    THRESHOLD_TIME = 1
+    # number of seconds to listen before forcing restart
+    LISTEN_TIME = 10
 
     speechRec = None
     speechRec_persona = None
@@ -45,21 +52,12 @@ class Mic:
         return score
 
     def fetchThreshold(self):
-
-        # TODO: Consolidate variables from the next three functions
-        THRESHOLD_MULTIPLIER = 1.8
-        RATE = 16000
-        CHUNK = 1024
-
-        # number of seconds to allow to establish threshold
-        THRESHOLD_TIME = 1
-
         # prepare recording stream
         stream = self._audio.open(format=pyaudio.paInt16,
                                   channels=1,
-                                  rate=RATE,
+                                  rate=self.RATE,
                                   input=True,
-                                  frames_per_buffer=CHUNK)
+                                  frames_per_buffer=self.CHUNK)
 
         # stores the audio data
         frames = []
@@ -68,9 +66,9 @@ class Mic:
         lastN = [i for i in range(20)]
 
         # calculate the long run average, and thereby the proper threshold
-        for i in range(0, RATE / CHUNK * THRESHOLD_TIME):
+        for i in range(0, self.RATE / self.CHUNK * self.THRESHOLD_TIME):
 
-            data = stream.read(CHUNK)
+            data = stream.read(self.CHUNK)
             frames.append(data)
 
             # save this data point as a score
@@ -82,7 +80,7 @@ class Mic:
         stream.close()
 
         # this will be the benchmark to cause a disturbance over!
-        THRESHOLD = average * THRESHOLD_MULTIPLIER
+        THRESHOLD = average * self.THRESHOLD_MULTIPLIER
 
         return THRESHOLD
 
@@ -92,22 +90,12 @@ class Mic:
         needs to be restarted.
         """
 
-        THRESHOLD_MULTIPLIER = 1.8
-        RATE = 16000
-        CHUNK = 1024
-
-        # number of seconds to allow to establish threshold
-        THRESHOLD_TIME = 1
-
-        # number of seconds to listen before forcing restart
-        LISTEN_TIME = 10
-
         # prepare recording stream
         stream = self._audio.open(format=pyaudio.paInt16,
                                   channels=1,
-                                  rate=RATE,
+                                  rate=self.RATE,
                                   input=True,
-                                  frames_per_buffer=CHUNK)
+                                  frames_per_buffer=self.CHUNK)
 
         # stores the audio data
         frames = []
@@ -116,9 +104,9 @@ class Mic:
         lastN = [i for i in range(30)]
 
         # calculate the long run average, and thereby the proper threshold
-        for i in range(0, RATE / CHUNK * THRESHOLD_TIME):
+        for i in range(0, self.RATE / self.CHUNK * self.THRESHOLD_TIME):
 
-            data = stream.read(CHUNK)
+            data = stream.read(self.CHUNK)
             frames.append(data)
 
             # save this data point as a score
@@ -127,7 +115,7 @@ class Mic:
             average = sum(lastN) / len(lastN)
 
         # this will be the benchmark to cause a disturbance over!
-        THRESHOLD = average * THRESHOLD_MULTIPLIER
+        THRESHOLD = average * self.THRESHOLD_MULTIPLIER
 
         # save some memory for sound data
         frames = []
@@ -136,9 +124,9 @@ class Mic:
         didDetect = False
 
         # start passively listening for disturbance above threshold
-        for i in range(0, RATE / CHUNK * LISTEN_TIME):
+        for i in range(0, self.RATE / self.CHUNK * self.LISTEN_TIME):
 
-            data = stream.read(CHUNK)
+            data = stream.read(self.CHUNK)
             frames.append(data)
             score = self.getScore(data)
 
@@ -158,9 +146,9 @@ class Mic:
 
         # otherwise, let's keep recording for few seconds and save the file
         DELAY_MULTIPLIER = 1
-        for i in range(0, RATE / CHUNK * DELAY_MULTIPLIER):
+        for i in range(0, self.RATE / self.CHUNK * DELAY_MULTIPLIER):
 
-            data = stream.read(CHUNK)
+            data = stream.read(self.CHUNK)
             frames.append(data)
 
         # save the audio data
@@ -171,7 +159,7 @@ class Mic:
             wav_fp = wave.open(f, 'wb')
             wav_fp.setnchannels(1)
             wav_fp.setsampwidth(pyaudio.get_sample_size(pyaudio.paInt16))
-            wav_fp.setframerate(RATE)
+            wav_fp.setframerate(self.RATE)
             wav_fp.writeframes(''.join(frames))
             wav_fp.close()
             f.seek(0)
@@ -202,10 +190,6 @@ class Mic:
             Returns a list of the matching options or None
         """
 
-        RATE = 16000
-        CHUNK = 1024
-        LISTEN_TIME = 12
-
         # check if no threshold provided
         if THRESHOLD is None:
             THRESHOLD = self.fetchThreshold()
@@ -215,18 +199,18 @@ class Mic:
         # prepare recording stream
         stream = self._audio.open(format=pyaudio.paInt16,
                                   channels=1,
-                                  rate=RATE,
+                                  rate=self.RATE,
                                   input=True,
-                                  frames_per_buffer=CHUNK)
+                                  frames_per_buffer=self.CHUNK)
 
         frames = []
         # increasing the range # results in longer pause after command
         # generation
         lastN = [THRESHOLD * 1.2 for i in range(30)]
 
-        for i in range(0, RATE / CHUNK * LISTEN_TIME):
+        for i in range(0, self.RATE / self.CHUNK * self.LISTEN_TIME):
 
-            data = stream.read(CHUNK)
+            data = stream.read(self.CHUNK)
             frames.append(data)
             score = self.getScore(data)
 
@@ -249,7 +233,7 @@ class Mic:
             wav_fp = wave.open(f, 'wb')
             wav_fp.setnchannels(1)
             wav_fp.setsampwidth(pyaudio.get_sample_size(pyaudio.paInt16))
-            wav_fp.setframerate(RATE)
+            wav_fp.setframerate(self.RATE)
             wav_fp.writeframes(''.join(frames))
             wav_fp.close()
             f.seek(0)
